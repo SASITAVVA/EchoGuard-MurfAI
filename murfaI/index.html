@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="EchoGuard AI | Autonomous audio response engine testbed interface.">
+    <meta name="theme-color" content="#050505">
+    <title>EchoGuard AI | Advanced Testbed</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { min-height: 100vh; background-color: #050505; color: #f3f4f6; font-family: 'JetBrains Mono', monospace; overflow-x: hidden; }
+        button:focus-visible, [role="button"]:focus-visible, [role="status"]:focus-visible { outline: 2px solid #3b82f6; outline-offset: 2px; }
+        .glass-panel { background: rgba(15, 15, 15, 0.9); border: 1px solid #222; backdrop-filter: blur(12px); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5); }
+        
+        @keyframes pulse-ring { 0% { transform: scale(0.8); opacity: 0.8; } 50% { transform: scale(1.2); opacity: 0.3; } 100% { transform: scale(0.8); opacity: 0.8; } }
+        .status-pulse { animation: pulse-ring 2s infinite; }
+        
+        /* Visualizer Bars */
+        .bar { width: 6px; background: #555; border-radius: 3px; transition: height 0.1s ease, background-color 0.3s ease; }
+        .speaking .bar { animation: bounce 0.5s infinite alternate; }
+        .speaking .bar:nth-child(1) { animation-delay: 0.1s; }
+        .speaking .bar:nth-child(2) { animation-delay: 0.3s; }
+        .speaking .bar:nth-child(3) { animation-delay: 0.0s; }
+        .speaking .bar:nth-child(4) { animation-delay: 0.4s; }
+        .speaking .bar:nth-child(5) { animation-delay: 0.2s; }
+        @keyframes bounce { from { height: 10px; } to { height: 40px; } }
+        
+        /* Scanline effect */
+        .scanlines { position: relative; overflow: hidden; }
+        .scanlines::before { content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06)); z-index: 10; background-size: 100% 4px, 6px 100%; pointer-events: none; }
+    </style>
+</head>
+<body class="antialiased p-4 md:p-8 scanlines">
+
+    <div class="max-w-6xl mx-auto mb-6 p-3 bg-red-950/30 border border-red-900 rounded text-xs text-red-400 font-bold flex items-center justify-between" role="alert">
+        <span>⚠️ SECURITY WARNING: LIVE API KEYS DETECTED IN SOURCE CODE. LOCAL TESTING ONLY.</span>
+    </div>
+
+    <main class="max-w-6xl mx-auto">
+
+    <header class="max-w-6xl mx-auto mb-8 border-b border-gray-800 pb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+        <div>
+            <h1 class="text-4xl font-black text-white tracking-tighter flex items-center gap-3">
+                <span class="text-red-600 status-pulse">●</span> ECHOGUARD <span class="text-[10px] bg-red-600 px-2 py-1 rounded text-white font-black tracking-widest align-middle">v3.5 MAX</span>
+            </h1>
+            <p class="text-gray-500 mt-2 text-xs uppercase tracking-widest">Autonomous Audio Response Engine</p>
+        </div>
+        <div class="text-left md:text-right text-[10px] text-gray-500 space-y-1">
+            <p>GROQ LLM LATENCY: <span id="latency-val" class="text-green-500 font-bold">0ms</span></p>
+            <p>TTS ENGINE: <span id="tts-engine" class="text-blue-400 font-bold">STANDBY</span></p>
+        </div>
+    </header>
+
+    <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8 relative z-20">
+        
+        <div class="space-y-4">
+            <h2 class="text-[10px] text-gray-500 mb-4 uppercase tracking-widest border-b border-gray-800 pb-2">Inject Sensor Data</h2>
+            
+            <button type="button" onclick="triggerAI('routine')" class="w-full text-left p-4 glass-panel rounded hover:bg-zinc-800 hover:border-green-500/50 transition-all group" aria-label="Trigger routine status announcement">
+                <div class="text-green-500 font-bold mb-1 group-hover:translate-x-1 transition-transform">PROXIMITY: ROUTINE</div>
+                <div class="text-[10px] text-gray-400 uppercase">Sector 4 Cleanroom Entry</div>
+            </button>
+
+            <button type="button" onclick="triggerAI('warning')" class="w-full text-left p-4 glass-panel rounded hover:bg-zinc-800 hover:border-orange-500/50 transition-all group" aria-label="Trigger warning status announcement">
+                <div class="text-orange-500 font-bold mb-1 group-hover:translate-x-1 transition-transform">SYSTEM: ANOMALY</div>
+                <div class="text-[10px] text-gray-400 uppercase">Pressure Variation - Pipe B2</div>
+            </button>
+
+            <button type="button" onclick="triggerAI('critical')" class="w-full text-left p-4 glass-panel rounded bg-red-950/10 border-red-900/50 hover:bg-red-900/30 hover:border-red-500 transition-all group" aria-label="Trigger critical status alert">
+                <div class="text-red-500 font-bold mb-1 group-hover:translate-x-1 transition-transform">HAZARD: CRITICAL</div>
+                <div class="text-[10px] text-gray-400 uppercase">Thermal Runaway Detected</div>
+            </button>
+
+            <div class="mt-8 p-4 glass-panel rounded border-gray-800 h-48 overflow-y-auto">
+                <h3 class="text-[10px] text-gray-500 uppercase tracking-widest mb-2 sticky top-0 bg-[#0f0f0f] pb-1">System Log</h3>
+                <ul id="system-log" class="text-[10px] text-gray-400 space-y-2 font-mono">
+                    <li>[SYSTEM] Ready for testing.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="lg:col-span-2">
+            <div id="dashboard" class="glass-panel p-6 md:p-8 rounded-lg border-t-2 border-gray-800 transition-all duration-300" role="status" aria-live="polite">
+                <div class="flex flex-col md:flex-row justify-between items-start mb-8 gap-4">
+                    <div>
+                        <h3 id="status-title" class="text-4xl font-black text-white tracking-tighter transition-colors">STANDBY</h3>
+                        <p id="sub-status" class="text-xs text-gray-500 uppercase mt-1">Monitoring Environmental Streams...</p>
+                    </div>
+                    
+                    <div id="visualizer" class="flex items-end gap-1 h-10 w-24">
+                        <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="p-3 bg-black/50 rounded border border-gray-800">
+                        <p class="text-[9px] text-gray-500 uppercase mb-1">Target Voice Model</p>
+                        <p id="voice-name" class="text-sm font-bold text-gray-300">NONE</p>
+                    </div>
+                    <div class="p-3 bg-black/50 rounded border border-gray-800">
+                        <p class="text-[9px] text-gray-500 uppercase mb-1">Threat Sentiment</p>
+                        <p id="sentiment" class="text-sm font-bold text-gray-300">NEUTRAL</p>
+                    </div>
+                </div>
+
+                <div class="relative p-6 bg-black rounded border border-zinc-800 min-h-[160px] shadow-inner">
+                    <div class="absolute top-2 left-3 text-[9px] text-zinc-600 font-bold uppercase tracking-widest flex items-center gap-2">
+                        <span id="recording-dot" class="w-2 h-2 rounded-full bg-zinc-700"></span> Live Transcription
+                    </div>
+                    <div class="mt-4">
+                        <p id="script-output" class="text-lg md:text-xl text-zinc-400 italic font-serif leading-relaxed min-h-[60px]">
+                            "System idle. Awaiting sensor data input for generation."
+                        </p>
+                        <span id="cursor" class="hidden text-white font-bold animate-pulse">|</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </main>
+
+    <script>
+        // HARDCODED KEYS AS REQUESTED (DANGEROUS FOR PRODUCTION)
+        const GROQ_KEY = "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";
+        const MURF_KEY = "ap2_378dd6f3-7e64-423a-aa6f-b6e91a337009";
+
+        let currentAudio = null;
+        let typewriterInterval = null;
+
+        const config = {
+            routine: { 
+                prompt: "Provide a polite, professional 1-sentence announcement about an upcoming routine HVAC filter change.",
+                voiceId: "en-US-marcus", 
+                color: "border-green-500",
+                textColor: "text-green-500",
+                sentiment: "STABLE",
+                barColor: "#22c55e"
+            },
+            warning: { 
+                prompt: "Provide a firm, serious 1-sentence warning about a minor pressure leak detected in Valve B requiring maintenance attention.",
+                voiceId: "en-US-sarah", 
+                color: "border-orange-500",
+                textColor: "text-orange-500",
+                sentiment: "CAUTIONARY",
+                barColor: "#f97316"
+            },
+            critical: { 
+                prompt: "Provide a highly urgent, authoritative 1-sentence command to immediately evacuate Sector 4 due to a critical thermal runaway event.",
+                voiceId: "en-US-nate", 
+                color: "border-red-600",
+                textColor: "text-red-500",
+                sentiment: "EMERGENCY",
+                barColor: "#dc2626"
+            }
+        };
+
+        function logEvent(msg, type="info") {
+            const log = document.getElementById('system-log');
+            const li = document.createElement('li');
+            const time = new Date().toLocaleTimeString();
+            let color = type === "error" ? "text-red-500" : (type === "success" ? "text-green-500" : "text-gray-400");
+            li.innerHTML = `<span class="text-gray-600">[${time}]</span> <span class="${color}">${msg}</span>`;
+            log.prepend(li);
+        }
+
+        function typeWriterEffect(text, elementId) {
+            const el = document.getElementById(elementId);
+            const cursor = document.getElementById('cursor');
+            el.innerText = '"';
+            cursor.classList.remove('hidden');
+            let i = 0;
+            
+            clearInterval(typewriterInterval);
+            typewriterInterval = setInterval(() => {
+                if (i < text.length) {
+                    el.innerText += text.charAt(i);
+                    i++;
+                } else {
+                    el.innerText += '"';
+                    cursor.classList.add('hidden');
+                    clearInterval(typewriterInterval);
+                }
+            }, 30); // Typing speed
+        }
+
+        // Fallback Native Browser TTS if Murf fails
+        function speakNativeFallback(text, configType) {
+            logEvent("Attempting native browser TTS fallback...", "info");
+            document.getElementById('tts-engine').innerText = "WEB SPEECH API (FALLBACK)";
+            
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                
+                // Adjust pitch/rate based on alert level
+                if(configType === 'critical') {
+                    utterance.rate = 1.1;
+                    utterance.pitch = 1.2;
+                } else if(configType === 'routine') {
+                    utterance.rate = 0.9;
+                }
+
+                utterance.onstart = () => {
+                    document.getElementById('visualizer').classList.add('speaking');
+                    updateUI(configType, "BROADCASTING");
+                };
+                
+                utterance.onend = () => {
+                    document.getElementById('visualizer').classList.remove('speaking');
+                    updateUI(configType, "STANDBY", true);
+                };
+
+                window.speechSynthesis.speak(utterance);
+                logEvent("Fallback TTS playback started.", "success");
+            } else {
+                logEvent("Native TTS not supported by browser.", "error");
+            }
+        }
+
+        async function triggerAI(type) {
+            // Reset & Stop previous actions
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+            }
+            window.speechSynthesis.cancel();
+            document.getElementById('visualizer').classList.remove('speaking');
+
+            const startTime = Date.now();
+            updateUI(type, "GENERATING SCRIPT...");
+            logEvent(`Triggered ${type.toUpperCase()} protocol.`);
+            
+            let generatedScript = "";
+
+            try {
+                // 1. GROQ LLM CALL
+                logEvent("Requesting script from Groq (LLAMA-3.3-70B)...");
+                const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                    method: "POST",
+                    headers: { "Authorization": `Bearer ${GROQ_KEY}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        model: "llama-3.3-70b-versatile",
+                        messages: [{ role: "system", content: "You are a concise industrial AI. Output ONLY the raw spoken script. No quotes, no intro." },
+                                   { role: "user", content: config[type].prompt }],
+                        temperature: 0.7,
+                        max_tokens: 100
+                    })
+                });
+                
+                if(!groqRes.ok) throw new Error(`Groq API Error: ${groqRes.status}`);
+                
+                const groqData = await groqRes.json();
+                generatedScript = groqData.choices[0].message.content.replace(/["']/g, ""); // Clean quotes
+                
+                const latency = Date.now() - startTime;
+                document.getElementById('latency-val').innerText = `${latency}ms`;
+                logEvent(`Groq generated script in ${latency}ms`, "success");
+
+                // Start typing effect
+                typeWriterEffect(generatedScript, 'script-output');
+                updateUI(type, "SYNTHESIZING AUDIO...");
+
+                // 2. MURF AI TTS CALL
+                logEvent(`Requesting audio from Murf (${config[type].voiceId})...`);
+                const murfRes = await fetch("https://api.murf.ai/v1/speech/generate", {
+                    method: "POST",
+                    headers: { 
+                        "api-key": MURF_KEY, 
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
+                    },
+                    body: JSON.stringify({
+                        voiceId: config[type].voiceId,
+                        text: generatedScript,
+                        format: "MP3"
+                    })
+                });
+                
+                if (!murfRes.ok) throw new Error(`Murf API Error: ${murfRes.status}`);
+                
+                const murfData = await murfRes.json();
+                
+                if(murfData.audioUrl || murfData.audioFile) {
+                    const audioSrc = murfData.audioUrl || `data:audio/mp3;base64,${murfData.audioFile}`;
+                    currentAudio = new Audio(audioSrc);
+                    
+                    currentAudio.onplay = () => {
+                        document.getElementById('tts-engine').innerText = "MURF AI";
+                        document.getElementById('visualizer').classList.add('speaking');
+                        updateUI(type, "BROADCASTING");
+                        logEvent("Murf audio playing.", "success");
+                    };
+                    
+                    currentAudio.onended = () => {
+                        document.getElementById('visualizer').classList.remove('speaking');
+                        updateUI(type, "STANDBY", true);
+                        logEvent("Broadcast complete.");
+                    };
+
+                    currentAudio.play().catch(e => {
+                        logEvent("Browser blocked autoplay. Falling back to native.", "error");
+                        speakNativeFallback(generatedScript, type);
+                    });
+                } else {
+                    throw new Error("Invalid Murf response format.");
+                }
+
+            } catch (err) {
+                console.error(err);
+                logEvent(err.message, "error");
+                
+                // If we got a script but Murf failed, fallback to native speech
+                if (generatedScript) {
+                    speakNativeFallback(generatedScript, type);
+                } else {
+                    updateUI(type, "SYSTEM FAILURE");
+                    document.getElementById('script-output').innerText = "ERROR: Connection to Neural Net severed.";
+                }
+            }
+        }
+
+        function updateUI(type, status, isReset = false) {
+            const dash = document.getElementById('dashboard');
+            const title = document.getElementById('status-title');
+            const dot = document.getElementById('recording-dot');
+            const bars = document.querySelectorAll('.bar');
+            
+            title.innerText = status;
+            title.className = `text-3xl md:text-4xl font-black tracking-tighter transition-colors ${config[type].textColor}`;
+            
+            if(!isReset) {
+                dash.className = `glass-panel p-6 md:p-8 rounded-lg border-t-4 transition-all duration-300 ${config[type].color}`;
+                document.getElementById('voice-name').innerText = config[type].voiceId.split('-').pop().toUpperCase();
+                document.getElementById('sentiment').innerText = config[type].sentiment;
+                bars.forEach(bar => bar.style.backgroundColor = config[type].barColor);
+            } else {
+                title.className = `text-3xl md:text-4xl font-black text-white tracking-tighter transition-colors`;
+                dash.className = `glass-panel p-6 md:p-8 rounded-lg border-t-2 border-gray-800 transition-all duration-300`;
+            }
+            
+            if (status.includes("PROCESSING") || status.includes("GENERATING") || status.includes("SYNTHESIZING")) {
+                dot.classList.replace('bg-zinc-700', 'bg-yellow-500');
+                dot.classList.add('animate-ping');
+            } else if (status === "BROADCASTING") {
+                dot.classList.replace('bg-yellow-500', 'bg-red-500');
+                dot.classList.add('animate-ping');
+            } else {
+                dot.classList.remove('animate-ping', 'bg-yellow-500', 'bg-red-500');
+                dot.classList.add('bg-zinc-700');
+            }
+        }
+    </script>
+</body>
+</html>
